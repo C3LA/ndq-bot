@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
+import os
 
 app = Flask(__name__)
 
@@ -56,6 +57,8 @@ def webhook():
     else:
         print("[❌] Failed to place trade:", response.text)
         return jsonify({"status": "Trade failed", "error": response.text}), 400
+   
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    port = int(os.environ.get('PORT', 5000))  # Use Render's port if available
+    app.run(host='0.0.0.0', port=port)
