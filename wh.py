@@ -12,13 +12,20 @@ X_SECURITY_TOKEN = 'c59659f2fa16eeebf0edd85e217126dca1336158f5ad0d57307d2fd1c9d8
 API_URL = 'https://api.ig.com/gateway/deal'
 
 @app.route('/webhook', methods=['POST'])
-@app.route('/webhook', methods=['POST'])
+
 def webhook():
     try:
-        import json
-        data = json.loads(request.data or '{}')
-        print("[📡] Webhook received:", data)
+        print("[📡] Raw request (raw):", request.data)
+        print("[📡] Raw request (text):", request.get_data(as_text=True))
 
+        import json
+        data = request.get_json(force=True, silent=True)
+
+        if not data:
+            print("[❌] JSON is empty or malformed.")
+            return jsonify({"error": "Invalid or empty JSON"}), 400
+
+        print("[📡] Webhook received:", data)
         direction = data.get("direction")
         epic = data.get("epic")
         size = data.get("size", 1)
