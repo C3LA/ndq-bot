@@ -13,28 +13,39 @@ API_URL = 'https://api.ig.com/gateway/deal'
 
 @app.route('/webhook', methods=['POST'])
 
+@app.route('/webhook', methods=['POST'])
 def webhook():
+    import json
+
     try:
-        print("[📡] Raw request (raw):", request.data)
-        print("[📡] Raw request (text):", request.get_data(as_text=True))
+        # Raw bytes
+        raw = request.data
+        print("[📡] Raw bytes:", raw)
 
-        import json
-        data = request.get_json(force=True, silent=True)
+        # Text version
+        text = request.get_data(as_text=True)
+        print("[📡] Raw text:", text)
 
-        if not data:
-            print("[❌] JSON is empty or malformed.")
-            return jsonify({"error": "Invalid or empty JSON"}), 400
+        # Attempt to parse JSON
+        try:
+            data = json.loads(text)
+        except Exception as parse_err:
+            print("[❌] Failed to parse JSON:", parse_err)
+            return jsonify({"error": "Invalid JSON"}), 400
 
-        print("[📡] Webhook received:", data)
-        direction = data.get("direction")
-        epic = data.get("epic")
-        size = data.get("size", 1)
-        stop_distance = data.get("sl", 20)
-        limit_distance = data.get("tp", 30)
+        print("[📡] Parsed JSON:", data)
 
-        if not all([direction, epic]):
+        # Proceed as normal (shortened)
+        if not data.get("direction") or not data.get("epic"):
             print("[❌] Missing direction or epic")
             return jsonify({"error": "Missing fields"}), 400
+
+        print("[✅] Webhook structure valid!")
+        return jsonify({"status": "ok"}), 200
+
+    except Exception as e:
+        print("[❌] UNEXPECTED ERROR:", str(e))
+        return jsonify({"error": "Unhandled exception"}), 500
 
         order_payload = {
             "epic": epic,
