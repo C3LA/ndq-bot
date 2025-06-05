@@ -41,6 +41,27 @@ def webhook():
             print("[❌] Missing 'direction' or 'epic'", flush=True)
             return jsonify({"error": "Missing fields"}), 400
 
+def login_to_ig():
+    login_url = f"{API_URL}/session"
+    payload = {
+        "identifier": "CalebFish",
+        "password": "Facetime1977"
+    }
+    headers = {
+        "X-IG-API-KEY": API_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Version": "2"
+    }
+    response = requests.post(login_url, json=payload, headers=headers)
+    if response.status_code != 200:
+        raise Exception("IG login failed: " + response.text)
+
+    cst = response.headers["CST"]
+    xst = response.headers["X-SECURITY-TOKEN"]
+    print("[🔐] IG login successful", flush=True)
+    return cst, xst
+
         order_payload = {
             "epic": epic,
             "expiry": "-",
@@ -55,9 +76,10 @@ def webhook():
             "dealReference": "tv-auto-trade"
         }
 
-        headers = {
-            "X-IG-API-KEY": API_KEY,
-            "CST": CST,
+        CST, X_SECURITY_TOKEN = login_to_ig()
+	    headers = {
+    	    "X-IG-API-KEY": API_KEY,
+    	    "CST": CST,
             "X-SECURITY-TOKEN": X_SECURITY_TOKEN,
             "Content-Type": "application/json",
             "Accept": "application/json",
