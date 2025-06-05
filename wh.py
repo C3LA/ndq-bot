@@ -12,7 +12,7 @@ API_URL = 'https://api.ig.com/gateway/deal'
 
 # 🔐 Your IG credentials
 IG_USERNAME = 'CalebFish'
-IG_PASSWORD = 'Facetime1977'
+IG_PASSWORD = 'Facetime1977!'
 
 # 🔁 IG Login Function
 def login_to_ig():
