@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
+import json
 import os
 
 app = Flask(__name__)
@@ -12,42 +13,33 @@ X_SECURITY_TOKEN = 'c59659f2fa16eeebf0edd85e217126dca1336158f5ad0d57307d2fd1c9d8
 API_URL = 'https://api.ig.com/gateway/deal'
 
 @app.route('/webhook', methods=['POST'])
-
-@app.route('/webhook', methods=['POST'])
 def webhook():
-    print("[👋] Webhook function entered!")  # Just to test logging
-    import json
+    print("[👋] Webhook function entered!", flush=True)
 
     try:
-	
-        # Raw bytes
-        raw = request.data
-        print("[📡] Raw bytes:", raw)
+        # Log raw body
+        raw = request.get_data(as_text=True)
+        print("[📡] Raw data:", raw, flush=True)
 
-        # Text version
-        text = request.get_data(as_text=True)
-        print("[📡] Raw text:", text)
-
-        # Attempt to parse JSON
+        # Parse JSON safely
         try:
-            data = json.loads(text)
-        except Exception as parse_err:
-            print("[❌] Failed to parse JSON:", parse_err)
+            data = json.loads(raw)
+        except Exception as e:
+            print("[❌] Failed to parse JSON:", str(e), flush=True)
             return jsonify({"error": "Invalid JSON"}), 400
 
-        print("[📡] Parsed JSON:", data)
+        print("[📡] Parsed JSON:", data, flush=True)
 
-        # Proceed as normal (shortened)
-        if not data.get("direction") or not data.get("epic"):
-            print("[❌] Missing direction or epic")
+        # Extract values
+        direction = data.get("direction")
+        epic = data.get("epic")
+        size = data.get("size", 1)
+        stop_distance = data.get("sl", 20)
+        limit_distance = data.get("tp", 30)
+
+        if not all([direction, epic]):
+            print("[❌] Missing 'direction' or 'epic'", flush=True)
             return jsonify({"error": "Missing fields"}), 400
-
-        print("[✅] Webhook structure valid!")
-        return jsonify({"status": "ok"}), 200
-
-    except Exception as e:
-        print("[❌] UNEXPECTED ERROR:", str(e))
-        return jsonify({"error": "Unhandled exception"}), 500
 
         order_payload = {
             "epic": epic,
@@ -75,17 +67,21 @@ def webhook():
         response = requests.post(f"{API_URL}/positions/otc", json=order_payload, headers=headers)
 
         if response.status_code == 200:
-            print("[✅] Trade placed.")
+            print("[✅] Trade placed successfully!", flush=True)
             return jsonify({"status": "Trade placed", "response": response.json()})
         else:
-            print("[❌] Failed to place trade:", response.text)
+            print("[❌] Trade failed:", response.text, flush=True)
             return jsonify({"status": "Trade failed", "error": response.text}), 400
 
     except Exception as e:
-        print("[❌] Error:", str(e))
-        return jsonify({"error": str(e)}), 500
+        print("[❌] Unhandled error:", str(e), flush=True)
+        return jsonify({"error": "Unhandled exception"}), 500
 
+@app.route('/ping')
+def ping():
+    print("[👋] Ping route hit!", flush=True)
+    return "pong", 200
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Use Render's port if available
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
