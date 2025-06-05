@@ -15,10 +15,11 @@ API_URL = 'https://api.ig.com/gateway/deal'
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    print("[👋] Webhook function entered!")  # Just to test logging
     import json
 
     try:
-	print("[👋] Webhook function entered!")
+	
         # Raw bytes
         raw = request.data
         print("[📡] Raw bytes:", raw)
