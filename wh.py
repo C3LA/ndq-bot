@@ -5,47 +5,21 @@ import os
 
 app = Flask(__name__)
 
-# 🔐 Your IG login tokens
+# 🔐 IG API Setup
 API_KEY = '1cc8abc22deb15de4f620c6733696db4df1786f5'
 ACCOUNT_ID = 'FWM4O'
-CST = 'd7837dcede074923894ff08ff80afdbf5488e80ca5170b6ed788fec92999f8CC01113'
-X_SECURITY_TOKEN = 'c59659f2fa16eeebf0edd85e217126dca1336158f5ad0d57307d2fd1c9d8eeCD01112'
 API_URL = 'https://api.ig.com/gateway/deal'
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    print("[👋] Webhook function entered!", flush=True)
+# 🔐 Your IG credentials
+IG_USERNAME = 'your-ig-username'
+IG_PASSWORD = 'your-ig-password'
 
-    try:
-        # Log raw body
-        raw = request.get_data(as_text=True)
-        print("[📡] Raw data:", raw, flush=True)
-
-        # Parse JSON safely
-        try:
-            data = json.loads(raw)
-        except Exception as e:
-            print("[❌] Failed to parse JSON:", str(e), flush=True)
-            return jsonify({"error": "Invalid JSON"}), 400
-
-        print("[📡] Parsed JSON:", data, flush=True)
-
-        # Extract values
-        direction = data.get("direction")
-        epic = data.get("epic")
-        size = data.get("size", 1)
-        stop_distance = data.get("sl", 20)
-        limit_distance = data.get("tp", 30)
-
-        if not all([direction, epic]):
-            print("[❌] Missing 'direction' or 'epic'", flush=True)
-            return jsonify({"error": "Missing fields"}), 400
-
+# 🔁 IG Login Function
 def login_to_ig():
     login_url = f"{API_URL}/session"
     payload = {
-        "identifier": "CalebFish",
-        "password": "Facetime1977"
+        "identifier": IG_USERNAME,
+        "password": IG_PASSWORD
     }
     headers = {
         "X-IG-API-KEY": API_KEY,
@@ -53,6 +27,7 @@ def login_to_ig():
         "Accept": "application/json",
         "Version": "2"
     }
+
     response = requests.post(login_url, json=payload, headers=headers)
     if response.status_code != 200:
         raise Exception("IG login failed: " + response.text)
@@ -61,6 +36,31 @@ def login_to_ig():
     xst = response.headers["X-SECURITY-TOKEN"]
     print("[🔐] IG login successful", flush=True)
     return cst, xst
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    print("[👋] Webhook function entered!", flush=True)
+
+    try:
+        raw = request.get_data(as_text=True)
+        print("[📡] Raw data:", raw, flush=True)
+
+        try:
+            data = json.loads(raw)
+        except Exception as e:
+            print("[❌] Failed to parse JSON:", str(e), flush=True)
+            return jsonify({"error": "Invalid JSON"}), 400
+
+        print("[📡] Parsed JSON:", data, flush=True)
+
+        # your trade logic...
+
+    except Exception as e:
+        print("[❌] Unhandled error:", str(e), flush=True)
+        return jsonify({"error": "Unhandled exception"}), 500
+
+        # 🔐 Login to get fresh tokens
+        CST, X_SECURITY_TOKEN = login_to_ig()
 
         order_payload = {
             "epic": epic,
@@ -76,10 +76,9 @@ def login_to_ig():
             "dealReference": "tv-auto-trade"
         }
 
-        CST, X_SECURITY_TOKEN = login_to_ig()
-	    headers = {
-    	    "X-IG-API-KEY": API_KEY,
-    	    "CST": CST,
+        headers = {
+            "X-IG-API-KEY": API_KEY,
+            "CST": CST,
             "X-SECURITY-TOKEN": X_SECURITY_TOKEN,
             "Content-Type": "application/json",
             "Accept": "application/json",
