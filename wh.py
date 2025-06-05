@@ -18,6 +18,7 @@ def webhook():
     import json
 
     try:
+	print("[👋] Webhook function entered!")
         # Raw bytes
         raw = request.data
         print("[📡] Raw bytes:", raw)
