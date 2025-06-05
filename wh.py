@@ -11,8 +11,8 @@ ACCOUNT_ID = 'FWM4O'
 API_URL = 'https://api.ig.com/gateway/deal'
 
 # 🔐 Your IG credentials
-IG_USERNAME = 'your-ig-username'
-IG_PASSWORD = 'your-ig-password'
+IG_USERNAME = 'CalebFish'
+IG_PASSWORD = 'Facetime1977'
 
 # 🔁 IG Login Function
 def login_to_ig():
@@ -50,8 +50,7 @@ def webhook():
             data = json.loads(raw)
         except Exception as e:
             print("[❌] Failed to parse JSON:", str(e), flush=True)
-            return jsonify({"error": "Invalid JSON"}), 400
-
+            return jsonify({"error": "Unhandled exception"}), 500
         print("[📡] Parsed JSON:", data, flush=True)
 
         direction = data.get("direction")
