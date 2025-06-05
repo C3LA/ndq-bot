@@ -29,8 +29,10 @@ def login_to_ig():
     }
 
     response = requests.post(login_url, json=payload, headers=headers)
-    if response.status_code != 200:
-        raise Exception("IG login failed: " + response.text)
+    if response.status_code == 200:
+    print("[✅] Trade placed successfully!", flush=True)
+    print("[📝] Full IG response:", response.json(), flush=True)
+    return jsonify({"status": "Trade placed", "response": response.json()})
 
     cst = response.headers["CST"]
     xst = response.headers["X-SECURITY-TOKEN"]
