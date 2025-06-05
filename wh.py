@@ -38,6 +38,7 @@ def login_to_ig():
     return cst, xst
 
 @app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['POST'])
 def webhook():
     print("[👋] Webhook function entered!", flush=True)
 
@@ -53,14 +54,58 @@ def webhook():
 
         print("[📡] Parsed JSON:", data, flush=True)
 
-        # your trade logic...
+        direction = data.get("direction")
+        epic = data.get("epic")
+        size = data.get("size", 1)
+        stop_distance = data.get("sl", 20)
+        limit_distance = data.get("tp", 30)
+
+        if not all([direction, epic]):
+            print("[❌] Missing 'direction' or 'epic'", flush=True)
+            return jsonify({"error": "Missing fields"}), 400
+
+        # Tokens
+        CST, X_SECURITY_TOKEN = login_to_ig()
+
+        order_payload = {
+            "epic": epic,
+            "expiry": "-",
+            "direction": direction.upper(),
+            "size": size,
+            "orderType": "MARKET",
+            "guaranteedStop": False,
+            "stopDistance": stop_distance,
+            "limitDistance": limit_distance,
+            "forceOpen": True,
+            "currencyCode": "GBP",
+            "dealReference": "tv-auto-trade"
+        }
+
+        headers = {
+            "X-IG-API-KEY": API_KEY,
+            "CST": CST,
+            "X-SECURITY-TOKEN": X_SECURITY_TOKEN,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Version": "2"
+        }
+
+        response = requests.post(f"{API_URL}/positions/otc", json=order_payload, headers=headers)
+
+        if response.status_code == 200:
+            print("[✅] Trade placed successfully!", flush=True)
+            return jsonify({"status": "Trade placed", "response": response.json()})
+        else:
+            print("[❌] Trade failed:", response.text, flush=True)
+            return jsonify({"status": "Trade failed", "error": response.text}), 400
+
+        # 🔒 This guarantees the route always ends with a valid response
+        return jsonify({"status": "received"}), 200
 
     except Exception as e:
         print("[❌] Unhandled error:", str(e), flush=True)
         return jsonify({"error": "Unhandled exception"}), 500
 
-        # 🔐 Login to get fresh tokens
-        CST, X_SECURITY_TOKEN = login_to_ig()
 
         order_payload = {
             "epic": epic,
